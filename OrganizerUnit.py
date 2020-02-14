@@ -4,8 +4,8 @@ from datetime import datetime
 from discord.ext import commands, tasks
 from bs4 import BeautifulSoup
 
-# token = os.environ.get('AuthToken')
-token = 'NjY4OTgwNzY1MDk4Mzc3MjE2.XiuoqA.JvRokkcui9VsQOU1Eq2VfxtMZck'
+token = os.environ.get('DiscordToken')
+
 
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
