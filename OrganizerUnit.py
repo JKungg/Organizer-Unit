@@ -11,7 +11,31 @@ client.remove_command('help')
 
 @client.command()
 async def help(ctx):
-    await ctx.send("```Here are the working commands : ```")
+    await ctx.send("""```css
+        [*]  ".start"
+            Do .start when Bot is added to your server for everything to work!
+        
+        [*] ".setchannel" (channel name)
+            Set the channel you want to have your matches and scrims posted in.
+
+        [*] ".setteam" (Team Name)
+            Set your Team Name as spelt on the VRML Website.
+    
+        [*] Every Monday at around 12:25 your teams matches will be posted to the desired channel!
+
+        [*] ".setscrim" (Day, Time)
+            Will post in desired channel your scrim time.
+
+        [*] ".setmatch" (Day, Time)
+            Will post in desired channel your game time.
+
+        [*] ".sremind" (15, minutes)
+            Will post in desired channel the time before your scrim.
+            Coming soon > Automatic Reminding
+
+        [*] ".sendmatch"
+            Will send the matches you have throughout the week.
+        ```""")
 
 
 # DATABASE CONNECTION FOR USE IN MULTIPLE SERVERS!
@@ -29,29 +53,27 @@ cursor = db.cursor()
 @commands.has_permissions(administrator = True)
 async def setchannel(ctx, arg1):
     await client.wait_until_ready()
-    arg1 = int(arg1)
-    guildID = ctx.guild.id
-    if isinstance(arg1, int):
-        matchChannel = client.get_channel(arg1)
-        mchannel = str(matchChannel)
 
-        print("Now Inserting Channel ID INTO Database...")
-        sql_update_channelID = (f'''UPDATE main
-            SET channel_id = ?
-            WHERE guild_id = ?
-            ''')
-        info = (mchannel, guildID)
-        cursor.execute(sql_update_channelID, info)
-        db.commit()
-        print("Channel Added to Database.")
-        
-        try:
-            await matchChannel.send("Match Channel Set!")
-        except:
-            await ctx.send("Invalid Channel ID, Check if you wrote it correctly!")
-        
-    else:
-        await ctx.send("Invalid Channel ID; Right click the channel and click **'Copy ID'**!")
+    # arg1 = int(arg1)
+    matchChannel = discord.utils.get(ctx.guild.text_channels, name=f'{arg1}')
+    guildID = ctx.guild.id
+    mchannel = str(matchChannel)
+
+    print("Now Inserting Channel ID INTO Database...")
+    sql_update_channelID = (f'''UPDATE main
+        SET channel_id = ?
+        WHERE guild_id = ?
+        ''')
+    info = (mchannel, guildID)
+    cursor.execute(sql_update_channelID, info)
+    db.commit()
+    print("Channel Added to Database.")
+    
+    try:
+        await matchChannel.send("Match Channel Set!")
+    except:
+        await ctx.send("Invalid Channel Name, Check if you wrote it correctly!")
+        print("Error SetChannel Code 0")
 
 
 
@@ -62,18 +84,20 @@ async def setteam(ctx, *args):
     await client.wait_until_ready()
     team = ' '.join(args)
     guildID = ctx.guild.id
+    try:
+        sql_team_set = (f"""UPDATE main
+            SET team = ?
+            WHERE guild_id = ?
+            """)
+        info = (team, guildID)
+        cursor.execute(sql_team_set, info)
+        db.commit()
+        print("Team Added to Datebase")
 
-    sql_team_set = (f"""UPDATE main
-        SET team = ?
-        WHERE guild_id = ?
-        """)
-    info = (team, guildID)
-    cursor.execute(sql_team_set, info)
-    db.commit()
-    print("Team Added to Datebase")
-
-    await ctx.send(f"You have set your team to : **{team}**")
-
+        await ctx.send(f"You have set your team to : **{team}**")
+    except:
+        await ctx.send(f"Error setting team! Please try again and check the spelling.")
+        print("Error SetTeam 0")
 
 
 # /\
@@ -87,9 +111,7 @@ async def setscrim(ctx, arg1, arg2):
     channelid = channelid[0]
 
 
-
     matchChannel = discord.utils.get(ctx.guild.text_channels, name=f'{channelid}')
-
     await matchChannel.send(f"Scrim Scheduled for: **{arg1.capitalize()} at {arg2.capitalize()}**")
     await ctx.message.delete()
 
@@ -110,14 +132,14 @@ async def setmatch(ctx, arg1, arg2):
 # .sremind command
 # TODO: Make it get .scrim time and remind 15 minutes before!
 @client.command()
-async def sremind(ctx, arg1, arg2):
+async def sremind(ctx, arg1, arg2, arg3):
 
     cursor.execute(f"""SELECT channel_id FROM main WHERE guild_id = {ctx.guild.id}""")
     channelid = cursor.fetchone()
     channelid = channelid[0]
 
     matchChannel = discord.utils.get(ctx.guild.text_channels, name=f'{channelid}')
-    await matchChannel.send(f"```Reminder you have a scrim in >>> {arg1} {arg2}```")
+    await matchChannel.send(f"Reminder you have a scrim in >>> {arg2} {arg3}")
     await ctx.message.delete()
 
 # Web Scrapper
@@ -211,7 +233,7 @@ async def sendScrape():
 
 
 scheduler = AsyncIOScheduler()
-scheduler.add_job(sendScrape, 'cron', day_of_week=0, hour=17, minute=15)
+scheduler.add_job(sendScrape, 'cron', day_of_week=0, hour=17, minute=25)
 scheduler.start()
 
 @client.command()
