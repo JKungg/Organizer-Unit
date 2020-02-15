@@ -1,4 +1,4 @@
-import discord, asyncio, os, random, time, json, requests
+import discord, asyncio, os, random, time, json, requests, sqlite3
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
 from discord.ext import commands, tasks
@@ -6,13 +6,20 @@ from bs4 import BeautifulSoup
 
 token = os.environ.get('DiscordToken')
 
-
 client = commands.Bot(command_prefix = '.')
 client.remove_command('help')
 
 @client.command()
 async def help(ctx):
     await ctx.send("```Here are the working commands : ```")
+
+
+# DATABASE CONNECTION FOR USE IN MULTIPLE SERVERS!
+
+
+
+db = sqlite3.connect('discordVariables.sqlite')
+cursor = db.cursor()
 
 
 
@@ -24,12 +31,19 @@ async def setchannel(ctx, arg1):
     global matchChannel
     await client.wait_until_ready()
     arg1 = int(arg1)
+
     if isinstance(arg1, int):
         matchChannel = client.get_channel(arg1)
+
         try:
             await matchChannel.send("Match Channel Set!")
         except:
             await ctx.send("Invalid Channel ID, Check if you wrote it correctly!")
+
+        mchannel = str(matchChannel)
+        cursor.execute('INSERT INTO main(matchChannel) values(?)',
+        (mchannel,))
+        db.commit()
     else:
         await ctx.send("Invalid Channel ID; Right click the channel and click **'Copy ID'**!")
 
@@ -147,9 +161,31 @@ scheduler = AsyncIOScheduler()
 scheduler.add_job(sendScrape, 'cron', day_of_week=0, hour=17, minute=15)
 scheduler.start()
 
+@client.command()
+@commands.has_permissions(administrator = True)
+async def start(ctx):
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS main(
+    server_name TEXT,
+    guild_id INTEGER,
+    team TEXT,
+    matchChannel INTEGER    
+    )
+    ''')
+    db.commit()
+
+    server_name = str(ctx.guild)
+    guild_id = ctx.guild.id
+
+    db.execute('INSERT INTO main(server_name, guild_id) values(?,?)',
+    (server_name, guild_id))
+    db.commit()
+
 # Ready Message
 @client.event
 async def on_ready():
+
     print('------')
     print("Loading Succesful...")
     print(client.user.name)
