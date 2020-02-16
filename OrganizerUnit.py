@@ -12,16 +12,14 @@ client.remove_command('help')
 @client.command()
 async def help(ctx):
     await ctx.send("""```css
-        [*]  ".start"
-            Do .start when Bot is added to your server for everything to work!
         
+        [*] Every Monday at around 12:25 your teams matches will be posted to the desired channel!
+
         [*] ".setchannel" (channel name)
             Set the channel you want to have your matches and scrims posted in.
 
         [*] ".setteam" (Team Name)
             Set your Team Name as spelt on the VRML Website.
-    
-        [*] Every Monday at around 12:25 your teams matches will be posted to the desired channel!
 
         [*] ".setscrim" (Day, Time)
             Will post in desired channel your scrim time.
@@ -37,7 +35,17 @@ async def help(ctx):
             Will send the matches you have throughout the week.
         ```""")
 
+@client.command()
+async def info(ctx):
+    
+    cursor.execute(f"""SELECT team FROM main WHERE guild_id = {ctx.guild.id}""")
+    teaminfo = cursor.fetchone()
+    team = teaminfo[0]
 
+    cursor.execute(f"SELECT channel_id FROM main WHERE guild_id = {ctx.guild.id}")
+    matchinfo = cursor.fetchone()
+    match = matchinfo[0]
+    await ctx.send(f"Team >> ***{team}***\nMatch Channel >> ***{match}***")
 # DATABASE CONNECTION FOR USE IN MULTIPLE SERVERS!
 
 
@@ -236,30 +244,40 @@ scheduler = AsyncIOScheduler()
 scheduler.add_job(sendScrape, 'cron', day_of_week=0, hour=17, minute=25)
 scheduler.start()
 
-@client.command()
-@commands.has_permissions(administrator = True)
-async def start(ctx):
+@client.event
+async def on_guild_join(guild):
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS main(
-    server_name TEXT,
-    guild_id INTEGER,
-    team TEXT,
-    channel_id TEXT    
-    )
-    ''')
-    db.commit()
-
-    server_name = str(ctx.guild)
-    guild_id = ctx.guild.id
+    server_name = str(guild)
+    guild_id = guild.id
 
     db.execute('INSERT INTO main(server_name, guild_id) values(?,?)',
     (server_name, guild_id))
     db.commit()
+    print("New Guild Inserted to Database.")
 
+@client.event
+async def on_guild_remove(guild):
+
+    server_name = str(guild)
+    guild_id = guild.id
+
+    db.execute(f'DELETE FROM main WHERE guild_id = {guild_id}')
+    db.commit()
+    print(f"Bot removed from {server_name}, database has been updated!")
+   
 # Ready Message
 @client.event
 async def on_ready():
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS main(
+        server_name TEXT,
+        guild_id INTEGER,
+        team TEXT,
+        channel_id TEXT    
+        )
+        ''')
+    db.commit()
 
     print('------')
     print("Loading Succesful...")
