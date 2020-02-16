@@ -4,9 +4,6 @@ Discord Bot that will be open to the public for use by any VRML Echo Arena Teams
 Bot Made by Kungg, with help from Skinny229
 
 Available Commands at the moment >>
-
-        [*]  ".start"
-            Do .start when Bot is added to your server for everything to work!
         
         [*] ".setchannel" (channel name)
             Set the channel you want to have your matches and scrims posted in.
