@@ -294,7 +294,7 @@ async def sendScrape():
 
 
 scheduler = AsyncIOScheduler()
-scheduler.add_job(sendScrape, 'cron', day_of_week=0, hour=17, minute=25)
+scheduler.add_job(sendScrape, 'cron', day_of_week=0, hour=16, minute=20)
 scheduler.start()
 
 @client.event
