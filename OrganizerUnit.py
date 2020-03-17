@@ -254,19 +254,21 @@ async def sendmatch(ctx):
 
 async def sendScrape():
     await client.wait_until_ready()
-    cursor.execute(f"""SELECT channel_id FROM main WHERE guild_id = {guildID}""")
+    cursor.execute(f"""SELECT channel_id FROM main WHERE guild_id = {ctx.guild.id}""")
     channelid = cursor.fetchone()
     channelid = channelid[0]
 
-    cursor.execute(f"""SELECT team FROM main WHERE guild_id = {guildID}""")
+    cursor.execute(f"""SELECT team FROM main WHERE guild_id = {ctx.guild.id}""")
     team = cursor.fetchone()
     team = team[0]
 
-    cursor.execute(f"SELECT role FROM main WHERE guild_id = {guildID}")
+    cursor.execute(f"SELECT role FROM main WHERE guild_id = {ctx.guild.id}")
     role = cursor.fetchone()
     role = role[0]
 
-    matchChannel = discord.utils.get()
+    matchChannel = discord.utils.get(ctx.guild.text_channels, name=f'{channelid}')
+    role = discord.utils.get(ctx.guild.roles, name=f'{role}')
+
     getTeams()
     await matchChannel.send(f"{role.mention} Upcoming Matches!")
 
